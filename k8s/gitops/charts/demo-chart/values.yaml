@@ -1,0 +1,20 @@
+# values.yaml 是 Helm 唯一的「输入变量表」，templates/ 里按 .Values.<键> 取值。
+# 🔴 键名不要改：改了模板就取不到值，渲染结果会变成 <no value>。
+
+# 副本数，整数，不要加引号。Release 演练用 --set replicaCount=2 覆盖，再 rollback 回原值。
+# 起点必须是 1，否则「1 → 2 → 1」那段验收对不上。
+replicaCount: 1
+
+image:
+  # 镜像仓库地址，不含 tag。只填地址本身，不要连键名一起写进来。
+  # Docker Official Image busybox，走 daocloud 镜像站全名直连；与
+  #   docker.io/... 走 hosts.toml mirror 是两条路径，别混。
+  # 判据：与预拉的 docker.m.daocloud.io/library/busybox:1.36 仓库部分一致。
+  repository: "docker.m.daocloud.io/library/busybox"
+
+  # 固定 tag，不要用 latest。离线演练，kubelet 不该再去公网拉。
+  tag: "1.36"
+
+# 写进 demo-config 的一句话文本，容器会定时把它打印到日志。
+# 别带冒号、换行、引号，YAML 转义会让你在检阅时多绕一圈。
+message: "看到我你就对了没看到你就完了"

@@ -1,0 +1,52 @@
+# ============================================================
+# SSH known_hosts ConfigMap
+# 来历：ArgoCD 官方 declarative-setup 的固定名单例 ConfigMap；
+#       v3.6.1 安装清单第 34693 行已预建同名对象，本次 apply 是「更新」不是新建。
+# 作用：给 repo-server 一张「我信任哪些 Git 服务器主机公钥」的清单。
+#       私钥解决「我证明我是谁」，known_hosts 解决「我确认对方是谁」，两边都要有。
+# 定位：骨架按官方清单里的对象抄，值留空由你填；填完交 AI 检阅，过了再上传。
+# 说明：known_hosts 里是公钥，不是私钥，可以回显核对；但仍别外发。
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # 【已填 7】name：这个 ConfigMap 的对象名。
+  # 来历：官方原文 For each specific kind of ConfigMap ... there is only a single
+  #       supported resource name —— 它是固定名，不能像 Secret 那样自拟。
+  # 非用不可：repo-server 按这个固定名把它挂成卷；改名 = 这份没人读。
+  # 去哪找答案：grep 官方安装清单，或查 declarative-setup 的资源名表格。
+  # 注意：下面那个 app.kubernetes.io/name 标签的值，官方示例里与这里相同，
+  #       两处填同一个值，都归已填 7。
+  name: argocd-ssh-known-hosts-cm
+ 
+  # 【已填 8】namespace：必须是 ArgoCD 所在 namespace，理由同已填 2。
+  namespace: argocd
+
+  labels:
+    # 【已填 7-续】与上面的 name 填同一个值。
+    app.kubernetes.io/name: argocd-ssh-known-hosts-cm
+
+    # 【已填 9】part-of 的值：官方点名要求的一个标签。
+    # 原文：Be sure to annotate your ConfigMap resources using the label
+    #       app.kubernetes.io/part-of: argocd, otherwise Argo CD will not be able to use them.
+    # 非用不可：缺了它，ConfigMap 建出来 ArgoCD 也不认，现象和「没配」一样难查。
+    # 判据：值就写在上面那句原文里。
+    app.kubernetes.io/part-of: argocd
+
+data:
+  # 【已填 10】这个 data 键的名字。
+  # 来历：官方挂载路径 /app/config/ssh/ 下会生成一个同名文件，
+  #       键名就是文件名；SSH 客户端读的正是那个 known_hosts 文件。
+  # 边界：键名写错 = 卷里多一个无关文件，SSH 仍报 host key 无法验证。
+  # 去哪找答案：官方安装清单第 34677 行。
+  #
+  # 【填空 11】值：把下面块里的占位行整行替换成 ssh-keyscan 的输出。
+  # ⚠️ 一行必须是三列：<server_name> <keytype> <base64-encoded_key>；
+  #    只贴第三段 base64 是最常见的错。来源是 /root/soft/ssh_known_hosts，
+  #    不是 ~/.ssh/argocd_gitops.pub（那是「用户公钥」，不是「主机公钥」）。
+  # 来历：/root/soft/ssh_known_hosts，格式是
+  #       <主机> <密钥算法> <base64 公钥>，一行一台主机，保持 4 空格缩进。
+  # ⚠️ 官方清单预置了 github.com / gitlab.com 等公网条目；本次 apply 是更新，
+  #    data 里同名键会被整体「覆盖」而不是追加。本 lab 只连内网 Git 源，无影响。
+  ssh_known_hosts: |
+    192.168.80.20 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICL7oDDtlzo1CWdprJsZDpkmL8XfSbI+FUjPhSoxeux2

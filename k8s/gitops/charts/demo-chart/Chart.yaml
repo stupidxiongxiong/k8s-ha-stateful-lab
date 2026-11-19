@@ -1,0 +1,16 @@
+# Chart.yaml 是 Helm Chart 的「身份证」。文件名必须叫 Chart.yaml，Helm 按名字取，不会遍历目录猜。
+
+apiVersion: v2          # Helm 3 固定写 v2；Helm 2 用 v1（Helm 3 已无集群内服务端 Tiller）
+name: demo-chart        # Chart 名。注意：它和 helm install 时给的 Release 名是两套账
+type: application       # application = 要产出可部署对象；library = 只供别的 Chart 复用
+
+# version：Chart 自身的版本号（不是被部署应用的版本号）。
+# 格式 主.次.补。改这个值 = 声明「这是一个新版本 Chart」；
+# 但 helm upgrade 每次生成新 revision 是按操作次数算的，与此值无关。
+version: "0.1.0"
+
+# appVersion：被部署应用的版本号，仅作展示，Helm 不拿它做任何逻辑判断。
+appVersion: "1.0.0"
+
+# description：一句话说明这个 Chart 干什么（可选）。
+description: "部署一个web-demo;容器是busybox"

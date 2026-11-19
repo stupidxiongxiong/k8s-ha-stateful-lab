@@ -1,0 +1,23 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# logs
+*.log
+
+# large binaries / offline image bundles (distributed separately)
+*.tar
+*.tgz
+*.tar.gz
+*.exe
+
+# local secrets (defensive)
+*.pem
+*.key
+kubeconfig*
+id_rsa*
+
+# backups & scratch
+*.bak*
+_tmp*/

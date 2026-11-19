@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>原生 K8s 高可用与有状态中间件 · 归档仓导览</title>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f7f6f2; --border:#e2e0d8; --border2:#c9c6bb;
+    --text:#2c2c2a; --muted:#5f5e5a; --hint:#888780;
+    --blue:#185fa5; --blue-bg:#e6f1fb; --blue-tx:#0c447c;
+    --teal:#0f6e56; --teal-bg:#e1f5ee; --teal-tx:#085041;
+    --amber:#854f0b; --amber-bg:#faeeda;
+    --purple:#6b3a8c; --purple-bg:#f0e6f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:26px 16px 70px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei","PingFang SC",sans-serif;
+    font-size:14px;line-height:1.7}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:23px;font-weight:500;margin:0 0 4px}
+  .lead{color:var(--muted);font-size:13px;margin:0 0 6px}
+  .meta{color:var(--hint);font-size:12px;margin:0 0 24px}
+  h2{font-size:18px;font-weight:600;margin:40px 0 6px;padding-bottom:8px;border-bottom:2px solid var(--text)}
+  h2 .idx{color:var(--hint);font-weight:400;margin-right:10px}
+  h3{font-size:15px;font-weight:600;margin:22px 0 6px;color:var(--teal-tx)}
+  h4{font-size:13.5px;font-weight:600;margin:14px 0 5px;color:var(--blue-tx)}
+  p{margin:6px 0}
+  code{font-family:"Cascadia Mono",Consolas,"Courier New",monospace;background:#f2f1ec;
+    padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 8px}
+  .toc a{display:inline-block;padding:5px 12px;border:1px solid var(--border2);border-radius:99px;
+    color:var(--text);text-decoration:none;font-size:12.5px;background:#fff}
+  .toc a:hover{background:var(--blue-bg);border-color:#b5d4f4;color:var(--blue-tx)}
+  .stats{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}
+  .stat{flex:1;min-width:130px;border:1px solid var(--border);border-radius:10px;padding:12px 16px;background:var(--surface)}
+  .stat b{display:block;font-size:22px;font-weight:600;color:var(--teal)}
+  .stat span{font-size:12px;color:var(--muted)}
+  .box{border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:12px 0;background:#fcfcfb}
+  .box.note{background:var(--blue-bg);border-color:#b5d4f4}
+  .box.warn{background:var(--amber-bg);border-color:#e8cfa0}
+  .box.ok{background:var(--teal-bg);border-color:#9fe1cb}
+  .box b{color:var(--text)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 12px}
+  th,td{border:1px solid var(--border);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--surface);font-weight:600;color:var(--muted)}
+  td code{white-space:nowrap}
+  .tag{display:inline-block;padding:1px 8px;border-radius:6px;font-size:11.5px;margin-right:5px}
+  .t-blue{background:var(--blue-bg);color:var(--blue-tx)}
+  .t-teal{background:var(--teal-bg);color:var(--teal-tx)}
+  .t-amber{background:var(--amber-bg);color:var(--amber)}
+  .t-purple{background:var(--purple-bg);color:var(--purple)}
+  ul{margin:6px 0 10px;padding-left:20px}
+  li{margin:3px 0}
+  .tree{background:#f7f6f2;border:1px solid var(--border);border-radius:10px;padding:14px 18px;
+    font-family:"Cascadia Mono",Consolas,monospace;font-size:12.5px;line-height:1.9;margin:12px 0}
+  .tree .d{color:var(--blue-tx);font-weight:600}
+  .tree .f{color:var(--muted)}
+  .tree .c{color:var(--hint)}
+  .svgwrap{background:#FAFAF7;border:1px solid var(--border);border-radius:10px;padding:8px;margin:14px 0;overflow-x:auto}
+  .small{font-size:12px;color:var(--muted)}
+  .sep{height:1px;background:var(--border);margin:26px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>原生 K8s 高可用与有状态中间件 · 归档仓导览</h1>
+<p class="lead">一份可复现参考的工程归档：从主机底座到控制面高可用、有状态存储、GitOps、故障复盘与可观测体系。</p>
+<p class="meta">面向已具备 Kubernetes 基础的读者 ｜ 按部署顺序编号，不按时间叙事 ｜ 基础名词不作解释</p>
+
+<div class="toc">
+  <a href="#overview">仓库总览</a>
+  <a href="#relation">目录关联</a>
+  <a href="#docs">docs 文档</a>
+  <a href="#infra">infra 主机底座</a>
+  <a href="#k8s">k8s 工作负载</a>
+  <a href="#assets">assets 资产</a>
+  <a href="#shots">截图索引</a>
+  <a href="#rules">约定</a>
+</div>
+
+<h2 id="overview"><span class="idx">01</span>仓库总览</h2>
+
+<div class="stats">
+  <div class="stat"><b>4</b><span>一级目录</span></div>
+  <div class="stat"><b>8</b><span>docs 复现文档</span></div>
+  <div class="stat"><b>11</b><span>infra 底座配置</span></div>
+  <div class="stat"><b>32</b><span>k8s 清单与 chart</span></div>
+  <div class="stat"><b>103</b><span>assets 截图</span></div>
+</div>
+
+<p>仓库按<span class="tag t-blue">文档</span><span class="tag t-teal">底座</span><span class="tag t-purple">工作负载</span><span class="tag t-amber">证据资产</span>四类组织。<code>docs/</code> 讲的是"为什么这么做与怎么验"，<code>infra/</code> 与 <code>k8s/</code> 是可直接落地的配置资产，<code>assets/</code> 存架构图与证据截图。三层之间靠"判据 → 清单 → 证据"串起来。</p>
+
+<div class="tree">
+<span class="d">k8s-ha-stateful-lab/</span>
+├── <span class="d">docs/</span>          <span class="c"># 8 篇复现文档，按 01–08 顺序，本仓的说明书</span>
+├── <span class="d">infra/</span>         <span class="c"># 主机底座与集群引导：在 k8s 之前、在节点上做</span>
+│   ├── <span class="d">vip-ha/</span>     <span class="c"># 高可用入口：haproxy + keepalived</span>
+│   ├── <span class="d">containerd/</span><span class="c"># 容器运行时与镜像加速</span>
+│   └── <span class="d">bootstrap/</span>  <span class="c"># 内核、时间、kubeadm 引导参数</span>
+├── <span class="d">k8s/</span>           <span class="c"># 集群内对象清单，kubectl apply 的东西</span>
+│   ├── <span class="d">network/</span> <span class="d">baseline/</span> <span class="d">stateful/</span>
+│   ├── <span class="d">gitops/</span> <span class="d">scaling/</span> <span class="d">monitoring/</span>
+├── <span class="d">assets/</span>
+│   ├── <span class="d">architecture/</span> <span class="c"># 架构图（当前预留，图内联在 docs）</span>
+│   └── <span class="d">screenshots/</span>  <span class="c"># 证据截图：expected-* / symptom-* / evidence-*</span>
+└── <span class="f">.gitignore</span>      <span class="c"># 挡离线包、密钥、备份</span>
+</div>
+
+<h2 id="relation"><span class="idx">02</span>目录关联</h2>
+
+<p>四类资产不是平级的四个抽屉，而是一条链：<code>docs</code> 定义目标与判据，<code>infra</code> 把裸机变成能装 K8s 的节点，<code>k8s</code> 在集群里建出各个系统，<code>assets</code> 记录每一步"判据达成了"的证据。</p>
+
+<div class="svgwrap">
+<svg viewBox="0 0 900 430" width="100%" role="img" aria-label="四类目录的关联关系图">
+  <rect x="0" y="0" width="900" height="430" fill="#FAFAF7"/>
+  <text x="20" y="28" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="17" font-weight="600" fill="#333333">判据 → 底座 → 工作负载 → 证据：一条链</text>
+  <line x1="20" y1="40" x2="880" y2="40" stroke="#C9C6BB" stroke-width="1"/>
+
+  <!-- docs 块 -->
+  <rect x="24" y="62" width="180" height="112" rx="10" fill="#DBEAF8" stroke="#185FA5" stroke-width="2"/>
+  <text x="36" y="86" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="16" font-weight="600" fill="#0C447C">docs/ 说明书</text>
+  <text x="36" y="110" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="14" fill="#333333">交付目标 · 环境快照</text>
+  <text x="36" y="132" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="14" fill="#333333">验收判据 · 已知坑</text>
+  <text x="36" y="158" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="13" fill="#555555">01 → 08 层层递进</text>
+
+  <!-- infra 块 -->
+  <rect x="252" y="62" width="180" height="112" rx="10" fill="#DFF2E9" stroke="#0F6E56" stroke-width="2"/>
+  <text x="264" y="86" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="16" font-weight="600" fill="#085041">infra/ 底座</text>
+  <text x="264" y="110" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="14" fill="#333333">VIP 漂移 · 运行时</text>
+  <text x="264" y="132" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="14" fill="#333333">内核 · kubeadm 引导</text>
+  <text x="264" y="158" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="13" fill="#555555">作用在节点上</text>
+
+  <!-- k8s 块 -->
+  <rect x="480" y="62" width="180" height="112" rx="10" fill="#DFF2E9" stroke="#0F6E56" stroke-width="2"/>
+  <text x="492" y="86" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="16" font-weight="600" fill="#085041">k8s/ 工作负载</text>
+  <text x="492" y="110" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="14" fill="#333333">网络 · 存储 · GitOps</text>
+  <text x="492" y="132" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="14" fill="#333333">弹性 · 监控清单</text>
+  <text x="492" y="158" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="13" fill="#555555">作用在集群里</text>
+
+  <!-- assets 块 -->
+  <rect x="708" y="62" width="168" height="112" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="2"/>
+  <text x="720" y="86" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="16" font-weight="600" fill="#854F0B">assets/ 证据</text>
+  <text x="720" y="110" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="14" fill="#333333">expected 正确结果</text>
+  <text x="720" y="132" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="14" fill="#333333">symptom 故障现象</text>
+  <text x="720" y="158" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="13" fill="#555555">evidence 过程留档</text>
+
+  <!-- 箭头 -->
+  <line x1="204" y1="118" x2="248" y2="118" stroke="#3A3A38" stroke-width="3"/>
+  <line x1="432" y1="118" x2="476" y2="118" stroke="#3A3A38" stroke-width="3"/>
+  <line x1="660" y1="118" x2="704" y2="118" stroke="#3A3A38" stroke-width="3"/>
+
+  <!-- 下方判据回路 -->
+  <rect x="252" y="248" width="408" height="70" rx="10" fill="#F0E6F7" stroke="#6B3A8C" stroke-width="2"/>
+  <text x="264" y="276" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="15" font-weight="600" fill="#6B3A8C">判据回路：docs 的"验收判据" ↔ assets 的同名证据</text>
+  <text x="264" y="300" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="13" fill="#333333">docs 里写的每张 expected-*/symptom-* 都能在 screenshots 找到对应文件</text>
+
+  <path d="M114 174 L114 283 L248 283" fill="none" stroke="#3A3A38" stroke-width="3"/>
+  <path d="M792 174 L792 283 L664 283" fill="none" stroke="#3A3A38" stroke-width="3"/>
+
+  <text x="24" y="360" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="13" fill="#555555">读法：先看 docs 定目标与判据 → 按 infra 把节点准备好 → 用 k8s 清单建系统 → 拿 assets 证据核对判据。</text>
+  <text x="24" y="386" font-family="'Microsoft YaHei','PingFang SC',system-ui,sans-serif" font-size="13" fill="#555555">底座与清单都在 docs 有对应章节；截图文件名与 docs 的"对应证据"一一对应，不会找不到图。</text>
+</svg>
+</div>
+
+<h2 id="docs"><span class="idx">03</span>docs/ — 复现文档</h2>
+
+<p>仓库的说明书，8 篇按部署顺序编号。每篇结构一致：交付目标 → 架构/原理 → 配置正文 → 验收判据 → 已知坑与警示。<span class="tag t-blue">第三人称</span><span class="tag t-blue">无 Day 编号</span><span class="tag t-blue">基础名词不解释</span></p>
+
+<table>
+<thead><tr><th style="width:32%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>01-架构与环境快照.md</code></td><td>全局总览：三层高可用架构、网络平面、版本快照、不可改的硬约束、镜像来源格局、资产索引。先读这篇建立地图。</td></tr>
+<tr><td><code>02-主机底座与容器运行时.md</code></td><td>裸机准备：关闭 firewalld/SELinux、内核模块与 sysctl、chrony 时间、containerd 原生安装与镜像加速。对应 <code>infra/bootstrap</code> 与 <code>infra/containerd</code>。</td></tr>
+<tr><td><code>03-高可用入口与集群引导.md</code></td><td>VIP 入口与 kubeadm 引导：haproxy 四层转发、keepalived VRRP 漂移、kubeadm init 参数、Calico 网络。对应 <code>infra/vip-ha</code> 与 <code>k8s/network</code>。</td></tr>
+<tr><td><code>04-控制面高可用与etcd演练.md</code></td><td>堆叠 etcd 的 Raft 多数派、apiserver 静态 Pod、故障演练 A/B/C 与证据链。证据见 <code>symptom-apiserver-kill-000</code> 等。</td></tr>
+<tr><td><code>05-有状态存储与MySQL主从.md</code></td><td>local-path StorageClass、PVC 生命周期、StatefulSet 稳定标识、MySQL 2 节点 GTID 主从。对应 <code>k8s/stateful</code>。</td></tr>
+<tr><td><code>06-声明式管理与GitOps.md</code></td><td>Helm chart 结构与渲染、ArgoCD Application、仓库凭据分离、漂移自愈。对应 <code>k8s/gitops</code> 的两个 chart。</td></tr>
+<tr><td><code>07-故障注入、原生证据链与复盘.md</code></td><td>三类故障（镜像 tag / 坏 directive / selector 错）的注入→现象→根因→revert 闭环，SLI/SLO 概念。证据见三张 <code>symptom-*</code>。</td></tr>
+<tr><td><code>08-资源治理、可观测体系与验收.md</code></td><td>resources + HPA + PDB、metrics-server、exporter/Prometheus/Grafana、PromQL 三条对账、项目级验收 ①–⑧。对应 <code>k8s/scaling</code> 与 <code>k8s/monitoring</code>。</td></tr>
+</tbody>
+</table>
+
+<h2 id="infra"><span class="idx">04</span>infra/ — 主机底座</h2>
+
+<p>装 K8s 之前、作用在每台节点上的配置。这里的参数写错，集群装不起来或埋下隐蔽故障。</p>
+
+<h3><span class="tag t-teal">infra/vip-ha/</span>高可用入口</h3>
+<p>haproxy 提供统一 TCP 入口 <code>:8443</code>，keepalived 让这个入口的 VIP <code>192.168.80.100</code> 在三台 master 间漂移。两个独立程序各管一半：keepalived 管地址漂移（三层），haproxy 管后端转发与摘除（四层）。</p>
+<table>
+<thead><tr><th style="width:34%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>haproxy.cfg</code></td><td>追加段：<code>defaults k8s-tcp</code>（避免继承 1 分钟超时掐断 watch）+ <code>bind 0.0.0.0:8443</code> + 三台 apiserver 的 roundrobin 后端。三台 master 内容一致。</td></tr>
+<tr><td><code>keepalived-master1.conf</code></td><td>主配置：priority 200、state MASTER、<code>weight -60</code>（须大于优先级间隔 50，否则 haproxy 死了 VIP 也不漂）。</td></tr>
+<tr><td><code>keepalived-master2.conf</code></td><td>备：由 master1 改 5 处（router_id / state / priority 150 / src_ip / peer），VRID 保持 51。</td></tr>
+<tr><td><code>keepalived-master3.conf</code></td><td>备：同上，priority 100。</td></tr>
+</tbody>
+</table>
+
+<h3><span class="tag t-teal">infra/containerd/</span>容器运行时</h3>
+<p>原生 containerd（无 docker），负责拉镜像与跑容器。Rocky 官方仓库不提供 containerd/cri-tools，来源是 Docker CE 源与 K8s 源。</p>
+<table>
+<thead><tr><th style="width:34%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>config-toml-changes.md</code></td><td>记录 <code>config.toml</code> 的三处必改（cgroup=systemd、沙箱镜像换源、镜像加速目录）。该文件是 <code>containerd config default</code> 生成的产物，不入库。</td></tr>
+<tr><td><code>hosts-docker-io.toml</code></td><td>docker.io 走 daocloud mirror。必须用 <code>[host."..."]</code> 分节写法；点号内联写法 containerd 2.4 读不出且静默直连原站。</td></tr>
+<tr><td><code>hosts-quay-io.toml</code></td><td>quay.io 备用 mirror。本项目 Calico 走 docker.io，此份留作备用。</td></tr>
+</tbody>
+</table>
+
+<h3><span class="tag t-teal">infra/bootstrap/</span>集群引导</h3>
+<p>内核与时间的前置条件，以及 kubeadm init 的权威参数。</p>
+<table>
+<thead><tr><th style="width:34%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>modules-k8s.conf</code></td><td><code>/etc/modules-load.d/k8s.conf</code>：overlay + br_netfilter，让网桥流量进 iptables。</td></tr>
+<tr><td><code>sysctl-k8s.conf</code></td><td><code>/etc/sysctl.d/k8s.conf</code>：三个 bridge-nf-call 与 ip_forward=1，三者缺一则 Calico/kube-proxy 不成立。</td></tr>
+<tr><td><code>chrony.md</code></td><td>时间同步改动：<code>makestep 1.0 -1</code> 允许 VM 挂起后强制对齐，否则证书校验与 etcd 时序判据失真。</td></tr>
+<tr><td><code>kubeadm-init.md</code></td><td>init 参数与硬约束：endpoint 必须 <code>:8443</code>（写进证书 SAN 改不了），Pod CIDR 必须 <code>10.244.0.0/16</code>（不能压节点网段）。</td></tr>
+</tbody>
+</table>
+
+<h2 id="k8s"><span class="idx">05</span>k8s/ — 工作负载清单</h2>
+
+<p>集群内对象的 YAML，<code>kubectl apply</code> 的东西。按功能分六个子目录，与 docs 章节一一对应。</p>
+
+<h3><span class="tag t-purple">k8s/network/</span>网络</h3>
+<table>
+<thead><tr><th style="width:34%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>calico.md</code></td><td>Calico v3.29.3 的来源 URL 与两条必改 sed：<code>CALICO_IPV4POOL_CIDR</code> 官方是注释掉的，不取消注释会与 kubeadm 的 CIDR 不一致，Pod 拿不到 IP。不囤整份上游 manifest。</td></tr>
+</tbody>
+</table>
+
+<h3><span class="tag t-purple">k8s/stateful/</span>有状态</h3>
+<p>local-path 存储 + PVC 生命周期 + StatefulSet + MySQL GTID 主从。<code>mysql-statefulset.yaml</code> 用 <code>secretKeyRef</code> 引用密码，不含明文。</p>
+<table>
+<thead><tr><th style="width:34%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>local-path-storage.yaml</code></td><td>local-path StorageClass 与 provisioner（RBAC + Deployment），宿主机目录做 PV。</td></tr>
+<tr><td><code>pvc.yaml</code> / <code>pvc-my.yaml</code> / <code>pvc-consumer.yaml</code></td><td>PVC 声明与消费 Pod，演示 PVC 的创建/绑定/回收生命周期。</td></tr>
+<tr><td><code>podtest.yaml</code></td><td>最简测试 Pod，用于挂载与连通性验证。</td></tr>
+<tr><td><code>web-headless-svc.yaml</code> / <code>web-statefulset.yaml</code></td><td>2 副本 nginx StatefulSet + headless Service，演示稳定 hostname 与 PVC 模板。</td></tr>
+<tr><td><code>mysql-statefulset.yaml</code></td><td>MySQL 主从 StatefulSet：GTID 配置、server-id、secretKeyRef 密码、local-path 数据卷。</td></tr>
+<tr><td><code>mysql-base.yaml</code> / <code>mysql-restore.yaml</code></td><td>MySQL 基础 Service/ConfigMap 与 PITR 恢复用 Pod。</td></tr>
+</tbody>
+</table>
+
+<h3><span class="tag t-purple">k8s/gitops/</span>声明式与 GitOps</h3>
+<p>Helm chart + ArgoCD Application + 仓库凭据。凭据文件已脱敏，真值只在 VM 上注入。</p>
+<table>
+<thead><tr><th style="width:40%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>application.yaml</code></td><td>ArgoCD Application：指向内网 Git 裸仓库、目标命名空间、自动同步与 self-heal 开关。</td></tr>
+<tr><td><code>repository-ssh-secret.yaml</code></td><td>仓库凭据 Secret。<span class="tag t-amber">已脱敏</span>私钥正文为占位符，真值只在 VM apply 前注入，不入 Git。</td></tr>
+<tr><td><code>ssh-known-hosts-cm.yaml</code></td><td>known_hosts ConfigMap，让 repo-server 校验 Git 服务端主机身份。</td></tr>
+<tr><td><code>argocd-install.yaml</code> / <code>argocd-images.txt</code></td><td>ArgoCD v3.6.1 官方安装清单与离线镜像列表。</td></tr>
+<tr><td><code>charts/demo-chart/</code></td><td>教学 Helm chart：Chart.yaml + values.yaml + templates（configmap/deployment）。Release install/upgrade/rollback 演练用。</td></tr>
+<tr><td><code>charts/nginx-chart/</code></td><td>业务 Helm chart：在上者基础上加 service.yaml，name 沿用 demo-config 让 ArgoCD 只 update 不重建。</td></tr>
+</tbody>
+</table>
+
+<h3><span class="tag t-purple">k8s/scaling/</span>弹性</h3>
+<table>
+<thead><tr><th style="width:34%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>metrics-server.yaml</code></td><td>metrics-server v0.7.2，提供 <code>metrics.k8s.io</code>，HPA 与 <code>kubectl top</code> 的数据源。</td></tr>
+<tr><td><code>nginx-demo-pdb.yaml</code></td><td>PodDisruptionBudget：<code>minAvailable</code> 限制主动驱逐时的可用副本下限，演示 <code>ALLOWED</code> 棘轮语义。</td></tr>
+</tbody>
+</table>
+<p class="small">注：HPA 与 resources patch 未在仓内单列清单——HPA 用 <code>kubectl autoscale</code> 创建、resources 用 <code>kubectl patch</code> 注入，命令与判据见 docs 08。</p>
+
+<h3><span class="tag t-purple">k8s/monitoring/</span>可观测</h3>
+<p>命名空间 <code>watch</code> 下的监控栈：exporter 暴露指标 → Prometheus 拉取写 TSDB → Grafana 查询绘图。Grafana 查 Prometheus 走集群内 Service DNS。</p>
+<table>
+<thead><tr><th style="width:34%">文件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>namespace-watch.yaml</code></td><td>监控栈专用命名空间 <code>watch</code>。</td></tr>
+<tr><td><code>node-exporter-daemonset.yaml</code></td><td>每节点一个 node-exporter，hostNetwork 暴露主机指标。</td></tr>
+<tr><td><code>node-exporter-headless-svc.yaml</code></td><td>headless Service，供 Prometheus 通过 DNS 发现所有 node-exporter Pod。</td></tr>
+<tr><td><code>blackbox-exporter.yaml</code></td><td>黑盒探测：<code>http_2xx</code> 模块，从外部视角探测端点可用性。</td></tr>
+<tr><td><code>prometheus.yaml</code></td><td>Prometheus ConfigMap（抓取配置）+ Deployment + Service，15s 拉取、TSDB 存储。NodePort 30300。</td></tr>
+<tr><td><code>prometheus-scrape-sample.yml</code></td><td>抓取配置样例片段。</td></tr>
+<tr><td><code>grafana.yaml</code></td><td>Grafana Deployment + Service，admin 密码为占位符。NodePort 30310。<span class="tag t-amber">已脱敏</span></td></tr>
+</tbody>
+</table>
+
+<h2 id="assets"><span class="idx">06</span>assets/ — 证据资产</h2>
+
+<h3><span class="tag t-amber">assets/architecture/</span>架构图</h3>
+<p>预留目录。集群拓扑、VIP 漂移、MySQL 主从三张图目前以内联 SVG 形式嵌在 <code>docs/01</code> 的架构总览中，未单独成文件，避免图与文档两地维护不一致。</p>
+
+<h3><span class="tag t-amber">assets/screenshots/</span>证据截图</h3>
+<p>103 张，三类命名：</p>
+<ul>
+  <li><code>expected-*</code>：正确结果的证据，共 14 个唯一名，与 docs 的"对应证据"行一一对应。</li>
+  <li><code>symptom-*</code>：故障现象，共 4 个，对应 docs 07 三类故障与 docs 04 的杀 apiserver 演练。</li>
+  <li><code>evidence-*</code>：施工过程留档，87 张原图去掉 D 编号与任务号后的主题名，保留全部细节供追溯。</li>
+</ul>
+<div class="box note"><b>命名即索引：</b>docs 里写的每张 <code>expected-*</code>/<code>symptom-*</code> 在此目录都有同名文件；<code>evidence-*</code> 是对应过程的原始截图。不存在"文档指向不存在的图"或"图找不到出处"的情况。</div>
+
+<h2 id="shots"><span class="idx">07</span>截图索引 — 判据与图对应</h2>
+
+<p>下表是 docs 引用的 16 张证据图，以及它们对应的原始留档。同一张原图若承载两个判据点（如 etcd 重join 图同时显示 3 成员与 leader），会生成两个语义名指向它。</p>
+
+<table>
+<thead><tr><th style="width:36%">证据名（docs 引用）</th><th>对应原始留档 evidence-*</th></tr></thead>
+<tbody>
+<tr><td><code>expected-etcd-3members-leader.png</code></td><td>演练C-重join成功-3成员新ID…（图内 3 成员 + IS LEADER=true）</td></tr>
+<tr><td><code>expected-member-rejoin-newid.png</code></td><td>同上（图内新 ID 3735bcd + d4proof2 仍在）</td></tr>
+<tr><td><code>symptom-apiserver-kill-000.png</code></td><td>演练A-杀apiserver-观察窗口出现000</td></tr>
+<tr><td><code>expected-mysql-gtid-sync.png</code></td><td>回灌-主从GTID一致数据恢复</td></tr>
+<tr><td><code>expected-mysql-terminal-check.png</code></td><td>终验-MySQL主从双Pod-Running</td></tr>
+<tr><td><code>expected-argocd-synced-healthy.png</code></td><td>Application状态watch-Synced与Healthy</td></tr>
+<tr><td><code>expected-helm-render-clean.png</code></td><td>Release演练-install-upgrade-rollback三条revision</td></tr>
+<tr><td><code>symptom-imagepullbackoff-events.png</code></td><td>故障一-Events-拉取403根因</td></tr>
+<tr><td><code>symptom-crashloop-previous-logs.png</code></td><td>故障二-logs自供-emerg-unknown-directive</td></tr>
+<tr><td><code>symptom-selector-empty-endpoints.png</code></td><td>故障三-endpoints-空壳无subsets</td></tr>
+<tr><td><code>expected-revert-clean.png</code></td><td>故障三-revert后-endpoints正常形态-subsets三IP带targetRef</td></tr>
+<tr><td><code>expected-hpa-scale-out.png</code></td><td>HPA扩6副本-Burstable与100m全齐</td></tr>
+<tr><td><code>expected-pdb-violate.png</code></td><td>PDB拦截-drain全过程-evict重试与violate</td></tr>
+<tr><td><code>expected-targets-7up.png</code></td><td>Targets全绿</td></tr>
+<tr><td><code>expected-grafana-two-panels.png</code></td><td>Grafana面板</td></tr>
+<tr><td><code>expected-sli-promql.png</code></td><td>SLI查询1-成功率Graph</td></tr>
+</tbody>
+</table>
+
+<div class="box warn"><b>有 7 处判据没有截图，已在 docs 如实标注"未单独留图"，以命令输出验收：</b>主机底座 2 处、VIP 引导 3 处、<code>SHOW REPLICA STATUS</code> 1 处、ArgoCD 自愈 1 处。<b>没有拿内容不符的图去凑数</b>——例如不用"Pod Running"图冒充 replica status，也不用"git revert"图冒充 ArgoCD 自愈。宁可标注缺失，也不制造错误对应。</div>
+
+<h2 id="rules"><span class="idx">08</span>约定</h2>
+<ul>
+  <li><b>单向派生</b>：本仓是复现参考，由施工版单向派生；不回写施工版，两处不双向编辑。</li>
+  <li><b>去时间叙事</b>：文档按 01–08 顺序编号，不出现 Day/任务号、第一人称与主观叙事；踩坑写成"已知坑与警示"。</li>
+  <li><b>凭据不入库</b>：密码/PAT/私钥一律占位符，真值只在 VM 上注入。已全仓扫描确认无真私钥、无明文密码。</li>
+  <li><b>不囤上游产物</b>：Calico manifest、containerd 生成的 config.toml、离线镜像包都不入仓，只留来源与改动说明。</li>
+  <li><b>证据可追溯</b>：docs 的判据 → 同名证据图 → 原始留档，三者一一对应。</li>
+</ul>
+
+<div class="sep"></div>
+<p class="small">本导览本身由归档仓内容生成，随仓库文件变化同步更新。</p>
+
+</div>
+</body>
+</html>

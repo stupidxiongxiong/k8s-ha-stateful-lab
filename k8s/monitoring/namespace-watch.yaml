@@ -1,0 +1,7 @@
+# 监控命名空间
+# 作用：把 node-exporter / blackbox-exporter / Prometheus / Grafana 收进独立命名空间 watch
+# 来源：本地自建（kubectl create ns watch 的清单化版本）
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: watch

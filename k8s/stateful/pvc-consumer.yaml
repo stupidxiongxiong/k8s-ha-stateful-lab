@@ -1,0 +1,28 @@
+# 消费者 Pod：用它来触发 WaitForFirstConsumer 的延迟绑定。
+# 没有这个 Pod，PVC 会一直 Pending（这是正常的，不是坏了）。
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-consumer
+  namespace: default
+spec:
+  containers:
+    - name: c
+      image: docker.io/library/busybox:1.36
+      command: ["sh", "-c", "echo hello-local-path > /data/test.txt; sleep 3600"]
+      volumeMounts:
+        - name: data
+          mountPath: /data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: pvc-demo          # ← 换成你自己的 PVC 名（如 pvc-test）
+
+# 验证链路（在 master1 上）：
+#   kubectl apply -f pvc.yaml
+#   kubectl apply -f pvc-consumer.yaml
+#   kubectl get pvc pvc-demo          # 应变为 Bound
+#   kubectl get pv                    # 应自动多出一个 PV
+# 在 worker1 上：
+#   ls /opt/local-path-provisioner/   # 应看到 pvc-xxxx 目录
+#   cat /opt/local-path-provisioner/pvc-xxxx/test.txt   # 应看到 hello-local-path

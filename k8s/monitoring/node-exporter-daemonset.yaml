@@ -1,0 +1,40 @@
+# node-exporter DaemonSet
+# 作用：每节点一个，抓整机 CPU/内存/磁盘/网络指标，暴露在节点 9100
+# 来源：镜像 quay.io/prometheus/node-exporter:v1.8.2（Prometheus 官方，离线包已备）
+# 关键：hostNetwork + hostPID + tolerations Exists（master 也跑）；--path.rootfs=/host 配合把宿主机根挂进容器
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: watch
+  labels:
+    app: node-exporter
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+    spec:
+      hostNetwork: true
+      hostPID: true
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: node-exporter
+          image: quay.io/prometheus/node-exporter:v1.8.2
+          args:
+            - --path.rootfs=/host
+          ports:
+            - containerPort: 9100
+              hostPort: 9100
+          volumeMounts:
+            - name: host
+              mountPath: /host
+              readOnly: true
+      volumes:
+        - name: host
+          hostPath:
+            path: /

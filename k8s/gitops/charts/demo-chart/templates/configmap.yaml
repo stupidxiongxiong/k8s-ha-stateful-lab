@@ -1,0 +1,15 @@
+# templates/ 里的文件名可以自己起：Helm 会遍历整个目录渲染每个 .yaml，按对象类型命名只为好认。
+# 🔴 不要写 namespace：交给 helm --namespace 和 ArgoCD 的 destination 决定。
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-config     # 必须与 deployment.yaml 里 volumes.configMap.name 一致
+data:
+  # 值取自 .Values.message，再套 quote 过滤器：ConfigMap 的 data 值必须是字符串，
+  # quote 会补上引号、顺带处理特殊字符。
+  # 🔴 这一行不要再加外层双引号：quote 自己就产出引号，外面再包一层会渲染成
+  #    两个连续双引号包住值，YAML 解析直接报错。官方示例就是不带外层引号的写法。
+  # 原理：Helm 先把模板文本里的表达式替换成结果，再把结果当 YAML 解析（两阶段），
+  #    渲染完成后已经没有花括号，不存在「花括号开头被当成映射」这回事。
+  message: {{ .Values.message | quote }}

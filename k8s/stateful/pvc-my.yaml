@@ -1,0 +1,12 @@
+# 我要一块 1G 的本地盘
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-test                    # 资源名
+spec:
+  accessModes:                     #接入模式
+    - ReadWriteOnce                  #单节点可读写挂载
+  storageClassName: local-path      #必须等于集群里已有的 SC 名
+  resources:
+    requests:
+      storage: 1Gi    #我要1G

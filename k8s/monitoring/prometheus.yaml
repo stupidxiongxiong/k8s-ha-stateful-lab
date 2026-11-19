@@ -1,0 +1,78 @@
+# Prometheus（ConfigMap + Deployment + Service 三合一）
+# 作用：拉模型每 15 秒抓三类目标——自身 / node-exporter 5 实例 / blackbox 探 nginx-demo（SLI 数据流闭环）
+# 来源：镜像 quay.io/prometheus/prometheus:v3.1.0（Prometheus 官方）；scrape 配置是本地写的 ConfigMap
+# 注意：TSDB retention 2d + emptyDir，Pod 重启指标历史即丢（lab 刻意裸装；生产要挂 PV）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: watch
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: node-exporter
+        dns_sd_configs:
+          - names: ['node-exporter.watch.svc.cluster.local']
+            type: 'A'
+            port: 9100
+      - job_name: blackbox-nginx-demo
+        metrics_path: /probe
+        params:
+          target: ['http://nginx-demo.gitops-lab.svc.cluster.local']
+        static_configs:
+          - targets: ['blackbox-exporter.watch.svc.cluster.local:9115']
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: watch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: quay.io/prometheus/prometheus:v3.1.0
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time=2d
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: cfg
+              mountPath: /etc/prometheus
+            - name: data
+              mountPath: /prometheus
+      volumes:
+        - name: cfg
+          configMap:
+            name: prometheus-config
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: watch
+spec:
+  type: NodePort
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
+      nodePort: 30300

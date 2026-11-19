@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: mysql
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["worker1"]
+      initContainers:
+      - name: init-server-id
+        image: docker.m.daocloud.io/library/busybox:1.36
+        command: ["sh", "-c"]
+        args:
+        - |
+          ORD=$(echo "$POD_NAME" | sed 's/.*-//')
+          echo "[mysqld]" > /work/server-id.cnf
+          echo "server-id=$((100+ORD))" >> /work/server-id.cnf
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: conf
+          mountPath: /work
+      containers:
+      - name: mysql
+        image: docker.m.daocloud.io/library/mysql:8.4.9
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: root-password
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: config
+          mountPath: /etc/mysql/conf.d/gtid.cnf
+          subPath: my.cnf
+        - name: conf
+          mountPath: /etc/mysql/conf.d/server-id.cnf
+          subPath: server-id.cnf
+        - name: data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: config
+        configMap:
+          name: mysql
+      - name: conf
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: local-path
+      resources:
+        requests:
+          storage: 1Gi

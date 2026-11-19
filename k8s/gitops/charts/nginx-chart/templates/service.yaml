@@ -1,0 +1,13 @@
+# all.yaml 里没有 Service。不写 namespace、不写 type（默认 ClusterIP 够用）。
+apiVersion: v1
+kind: Service
+metadata:
+  # 与 Deployment 同名是习惯做法（不同 Kind 不冲突），curl 时好认。
+  name: nginx-demo
+spec:
+  # 全 Chart 唯一引用 serviceSelector 的地方：故障三改旋钮，只有这一行跟着变。
+  selector:
+    app: {{ .Values.serviceSelector }}
+  ports:
+    - port: 80
+      targetPort: 80

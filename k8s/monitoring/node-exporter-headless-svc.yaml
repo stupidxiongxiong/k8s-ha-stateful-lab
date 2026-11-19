@@ -1,0 +1,15 @@
+# node-exporter headless Service
+# 作用：clusterIP: None 不发 VIP，DNS 查它直接返回全部 Pod IP（这里 5 个 = 5 节点 IP），Prometheus dns_sd 靠它一次拿到全部目标
+# 来源：本地自建的 Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter
+  namespace: watch
+spec:
+  clusterIP: None
+  selector:
+    app: node-exporter
+  ports:
+    - port: 9100
+      targetPort: 9100

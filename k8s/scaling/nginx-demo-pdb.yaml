@@ -1,0 +1,14 @@
+# PodDisruptionBudget
+# 作用：保护 nginx-demo 的 3 副本，主动驱逐时保证至少 2 个 Ready（ALLOWED = healthy - minAvailable）
+# 来源：本地自建；minAvailable: 2 是演练值，收尾改回 2 作生产姿态
+# 边界：只拦主动 evict（drain），不拦崩溃（非自愿中断由 Deployment 兜底）；只 drain worker2，禁 drain worker1
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nginx-demo-pdb
+  namespace: gitops-lab
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: nginx-demo

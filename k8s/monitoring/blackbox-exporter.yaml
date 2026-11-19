@@ -1,0 +1,56 @@
+# blackbox-exporter（ConfigMap + Deployment + Service 三合一）
+# 作用：替人每 15 秒 curl 一次 nginx-demo，把成败翻译成 probe_success / probe_http_status_code 指标
+# 来源：镜像 quay.io/prometheus/blackbox-exporter:v0.25.0（Prometheus 官方）；模块配置是本地写的 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blackbox-config
+  namespace: watch
+data:
+  web.yml: |
+    modules:
+      http_2xx:
+        prober: http
+        http:
+          preferred_ip_protocol: ip4
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: watch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        app: blackbox-exporter
+    spec:
+      containers:
+        - name: blackbox-exporter
+          image: quay.io/prometheus/blackbox-exporter:v0.25.0
+          args: ["--config.file=/etc/blackbox_exporter/web.yml"]
+          ports:
+            - containerPort: 9115
+          volumeMounts:
+            - name: cfg
+              mountPath: /etc/blackbox_exporter
+      volumes:
+        - name: cfg
+          configMap:
+            name: blackbox-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox-exporter
+  namespace: watch
+spec:
+  selector:
+    app: blackbox-exporter
+  ports:
+    - port: 9115
+      targetPort: 9115
