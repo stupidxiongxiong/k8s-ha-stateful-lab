@@ -1,12 +1,8 @@
 # /etc/containerd/certs.d/docker.io/hosts.toml
-# 来源：施工手册 · 容器运行时（镜像加速）
-# 作用：让 docker.io 类镜像（MySQL / local-path-provisioner / Calico / Grafana 等）
-#       经 daocloud mirror 拉取。国内 registry-1.docker.io DNS 被污染，直连必失败。
-# 部署位置：5 台节点
-# 警示：必须用 [host."..."] 方括号分节 + 换行 capabilities 的写法。
-#       写成 host."https://...".capabilities = [...] 点号内联形式，TOML 语法合法，
-#       但 containerd 2.4 读不出 host 表，会静默直连原站且不报错，表现为 connection refused。
-# 验收：crictl pull docker.io/library/busybox:1.36 成功（必须写原生地址才验得出 mirror 生效）
+# 作用：docker.io 镜像经 mirror 拉取（国内直连 registry-1.docker.io 不可用）。
+# 约束：mirror 必须写成 [host."..."] 分节 + 换行 capabilities。
+#       点号内联写法语法合法，但 containerd 2.4 解析不出 host 表，会静默直连原站且不报错。
+# 验证：crictl pull docker.io/library/busybox:1.36（必须用原生地址，否则验不出 mirror 是否生效）
 
 server = "https://registry-1.docker.io"
 

@@ -1,6 +1,5 @@
-# node-exporter headless Service
-# 作用：clusterIP: None 不发 VIP，DNS 查它直接返回全部 Pod IP（这里 5 个 = 5 节点 IP），Prometheus dns_sd 靠它一次拿到全部目标
-# 来源：本地自建的 Service
+# node-exporter headless Service：clusterIP: None 不做负载均衡，DNS 查询返回全部 Pod IP，
+# 供 Prometheus 通过 dns_sd 一次取得所有抓取目标。
 apiVersion: v1
 kind: Service
 metadata:

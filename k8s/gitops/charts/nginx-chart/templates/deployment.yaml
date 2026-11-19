@@ -1,32 +1,27 @@
-# 三样东西故意不写：namespace（交给 destination）、nodeAffinity（MySQL 才需要钉节点）、
-# imagePullPolicy（固定 tag 默认 IfNotPresent，预拉镜像才用得上）。
+# 不写 namespace、nodeAffinity、imagePullPolicy：分别由 destination 与固定 tag 默认值决定。
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # 写死：Release 名（helm template 的第一个参数）≠ 对象名，两套账。
   name: nginx-demo
 spec:
-  # replicas 是整数，不加引号（引号 → 字符串 → apiserver 拒收）。
+  # 整数，不加引号，否则渲染为字符串被 apiserver 拒收
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      # 不可变字段：写死，绝不引用 serviceSelector，否则故障三退化成 SyncFailed。
+      # 不可变字段：写死，不引用 serviceSelector
       app: nginx-demo
   template:
     metadata:
       labels:
-        # 必须与上面 selector 完全一致，否则 apiserver 直接拒绝创建。
-        app: nginx-demo
+        app: nginx-demo     # 必须与 selector 一致，否则 apiserver 拒绝创建
     spec:
       containers:
         - name: web
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          # command 覆盖镜像的 ENTRYPOINT+CMD（/docker-entrypoint.sh 不再执行，本 lab 无影响）；
-          # 故障二在 nginxArgs 里追加非法指令 → 启动即崩。
+          # 覆盖镜像的 ENTRYPOINT + CMD；参数非法时启动即退出
           command: ["nginx", "-g", {{ .Values.nginxArgs | quote }}]
           ports:
             - containerPort: 80
-          # 探针指向镜像真实服务的 /:80；故障三时 READY 1/1 是「nginx 活着」的证据。
           readinessProbe:
             httpGet:
               path: /

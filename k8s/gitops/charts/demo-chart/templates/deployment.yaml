@@ -1,13 +1,10 @@
-# 🔴 不要写 namespace：交给 helm --namespace / ArgoCD destination。
-# 🔴 不要写 nodeAffinity：钉 worker1 是 MySQL 有状态的特例，这里不需要。
-# 🔴 不写 imagePullPolicy：镜像已预拉在本地，保持固定 tag。
-
+# 不写 namespace（由 helm --namespace / ArgoCD destination 决定）；
+# 不写 imagePullPolicy（固定 tag 默认 IfNotPresent，镜像已预拉）。
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-demo          # 写死。故意不引用 Release 名：Release 名 ≠ 对象名，两者是两套账
+  name: web-demo          # 写死；Release 名与对象名无关
 spec:
-  # 副本数取自 .Values.replicaCount，渲染后必须是真整数 1。
   replicas: {{ .Values.replicaCount }}
 
   selector:
@@ -16,23 +13,20 @@ spec:
   template:
     metadata:
       labels:
-        app: web-demo       # 必须与上面 selector 完全一致，否则 apiserver 直接拒绝
+        app: web-demo       # 必须与 selector 一致，否则 apiserver 拒绝创建
     spec:
       containers:
-        - name: demo        # 容器名故意不叫 web-demo，避免和 Deployment 名 / Pod 名前缀再撞一层
+        - name: demo
 
-          # 拼出「仓库:tag」的镜像全名，两段都从 .Values.image 下取。
-          # 外层双引号把拼接结果显式声明为字符串，防止值里的 YAML 特殊字符引发歧义；
-          # 这里两个表达式都没有 quote，引号要自己加 —— 与 configmap.yaml 正好相反。
+          # 外层双引号将拼接结果声明为字符串；此处未使用 quote 过滤器。
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
 
-          # 让容器不退出，并每 30 秒把挂载文件打印到日志。
           command: ["sh","-c","while true; do cat /etc/config/message; sleep 30; done"]
 
           volumeMounts:
             - name: config
-              mountPath: /etc/config   # 挂整个 ConfigMap 目录；data 的键名就是文件名 → /etc/config/message
+              mountPath: /etc/config   # 挂载整个 ConfigMap，data 键名即文件名
       volumes:
-        - name: config               # 必须与上面 volumeMounts 的 name 对上
+        - name: config               # 与上面 volumeMounts 的 name 一致
           configMap:
-            name: demo-config        # 必须与 templates/configmap.yaml 的 metadata.name 一致
+            name: demo-config        # 与 templates/configmap.yaml 的 metadata.name 一致

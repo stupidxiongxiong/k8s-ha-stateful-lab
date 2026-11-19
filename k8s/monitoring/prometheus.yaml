@@ -1,7 +1,6 @@
-# Prometheus（ConfigMap + Deployment + Service 三合一）
-# 作用：拉模型每 15 秒抓三类目标——自身 / node-exporter 5 实例 / blackbox 探 nginx-demo（SLI 数据流闭环）
-# 来源：镜像 quay.io/prometheus/prometheus:v3.1.0（Prometheus 官方）；scrape 配置是本地写的 ConfigMap
-# 注意：TSDB retention 2d + emptyDir，Pod 重启指标历史即丢（lab 刻意裸装；生产要挂 PV）
+# Prometheus：ConfigMap（抓取配置）+ Deployment + Service。
+# 抓取目标：自身、node-exporter（headless DNS 发现）、blackbox 探测 nginx-demo。
+# 存储为 emptyDir + retention 2d，Pod 重建即丢历史指标；生产需挂持久卷。
 apiVersion: v1
 kind: ConfigMap
 metadata:

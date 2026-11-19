@@ -1,9 +1,6 @@
 # /etc/containerd/certs.d/quay.io/hosts.toml
-# 来源：施工手册 · 容器运行时（镜像加速备用）
-# 作用：quay.io 备用 mirror。本项目 Calico 走 docker.io，此份留作备用。
-# 部署位置：5 台节点
-# 警示：不建议用 quay.io 验证 mirror——它国内直连本身可通，成功也分不清走的是
-#       mirror 还是原站；验证请用 docker.io 的 busybox。
+# 作用：quay.io 备用 mirror。
+# 注意：quay.io 国内可直连，用它验证无法区分是否经过 mirror；验证应使用 docker.io 镜像。
 
 server = "https://quay.io"
 

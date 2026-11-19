@@ -1,6 +1,4 @@
-# blackbox-exporter（ConfigMap + Deployment + Service 三合一）
-# 作用：替人每 15 秒 curl 一次 nginx-demo，把成败翻译成 probe_success / probe_http_status_code 指标
-# 来源：镜像 quay.io/prometheus/blackbox-exporter:v0.25.0（Prometheus 官方）；模块配置是本地写的 ConfigMap
+# blackbox-exporter：周期性探测目标地址，将结果输出为 probe_success / probe_http_status_code 等指标。
 apiVersion: v1
 kind: ConfigMap
 metadata:

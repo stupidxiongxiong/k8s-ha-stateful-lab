@@ -1,7 +1,5 @@
-# Grafana（Deployment + Service）
-# 作用：只存「面板怎么画」的定义，指标实时向 Prometheus 查——删了重建曲线不丢
-# 来源：镜像 docker.io/grafana/grafana:11.4.0
-# 安全：管理员密码用占位符，apply 前在 VM 上替换；绝不可把真值写进本文件（会入 Git）
+# Grafana：仅保存面板与数据源定义，指标实时向 Prometheus 查询。
+# 约束：GF_SECURITY_ADMIN_PASSWORD 保持占位符，真值在部署时注入，不写入会入版本库的文件。
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,7 +20,7 @@ spec:
           image: docker.io/grafana/grafana:11.4.0
           env:
             - name: GF_SECURITY_ADMIN_PASSWORD
-              value: "<你的Grafana管理员密码>"      # 占位符，apply 前在 VM 上替换，别写真值进会入 Git 的文件
+              value: "<你的Grafana管理员密码>"      # 占位符，部署时替换
           ports:
             - containerPort: 3000
 ---

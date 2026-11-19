@@ -1,14 +1,10 @@
-# 2 副本 nginx StatefulSet + volumeClaimTemplates
-# 目的：验证「每副本固定名字 + 独立盘 + 稳定 DNS + 有序启停」
-#
-# 镜像：docker.io/library/nginx:1.27（走 daocloud 镜像）
-#       若 worker1 上没有，会先拉一次（约 70MB）
+# 2 副本 nginx StatefulSet：每副本固定名、独立 PVC、稳定 DNS、有序启停。
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: web
 spec:
-  serviceName: web          # ← 必须等于 headless Service 的名字（靠它发 DNS）
+  serviceName: web          # 必须是 headless Service 的名称，DNS 记录由它生成
   replicas: 2
   selector:
     matchLabels:
@@ -21,17 +17,17 @@ spec:
       containers:
         - name: nginx
           image: docker.io/library/nginx:1.27
-          # 先把自己的名字写进 /data/hostname（这块盘是本副本专属的），再起 nginx
+          # 先把本副本名写入专属数据卷，再启动 nginx
           command: ["sh", "-c", "echo $(hostname) > /data/hostname; exec nginx -g 'daemon off;'"]
           ports:
             - containerPort: 80
           volumeMounts:
             - name: data
               mountPath: /data
-  # ↓↓↓ 这一段就是「自动分盘」的核心：模板写一次，每个副本各生成一份 PVC
+  # 模板只需写一次，每个副本各生成一份 PVC
   volumeClaimTemplates:
     - metadata:
-        name: data          # 生成的 PVC 叫 data-web-0 / data-web-1
+        name: data          # 生成 PVC 名：data-web-0 / data-web-1
       spec:
         accessModes: ["ReadWriteOnce"]
         storageClassName: local-path

@@ -1,7 +1,5 @@
-# node-exporter DaemonSet
-# 作用：每节点一个，抓整机 CPU/内存/磁盘/网络指标，暴露在节点 9100
-# 来源：镜像 quay.io/prometheus/node-exporter:v1.8.2（Prometheus 官方，离线包已备）
-# 关键：hostNetwork + hostPID + tolerations Exists（master 也跑）；--path.rootfs=/host 配合把宿主机根挂进容器
+# node-exporter DaemonSet：每节点一个实例，暴露节点 CPU / 内存 / 磁盘 / 网络指标于 9100。
+# hostNetwork + hostPID + toleration Exists 使 master 节点也运行；--path.rootfs 指定宿主机根文件系统。
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

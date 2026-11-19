@@ -1,22 +1,17 @@
-# Helm 唯一的输入变量表，templates/ 按 .Values.<键> 取值；键名不可改（改了渲染出 <no value>）。
-# 三个故障旋钮彼此独立：tag（故障一）、nginxArgs（故障二）、serviceSelector（故障三）。
-
-# 副本数，整数不加引号（引号 → 字符串 → apiserver 拒收 int32）。
-replicaCount: 3
+# templates/ 按 .Values.<键> 取值，键名不可修改。三个可调项彼此独立：tag / nginxArgs / serviceSelector。
+replicaCount: 3          # 整数，不加引号（引号会变成字符串，apiserver 拒收）
 
 image:
-  # Docker Official Image，daocloud 全名直连；必须与预拉镜像逐字一致
-  # （containerd 按完整镜像名做缓存键，写一个拉另一个等于白拉）。
+  # 必须与预拉镜像逐字一致：containerd 按完整镜像名做缓存键
   repository: docker.m.daocloud.io/library/nginx
-  # 带引号：裸写 1.27 会被 YAML 读成浮点数。故障一把它改成不存在的 tag。
+  # 加引号，裸写 1.27 会被 YAML 解析为浮点数
   tag: "1.27"
 
-# nginx 主进程参数，只被 deployment.yaml 的 command 引用；故障二在其后追加非法指令。
+# nginx 主进程参数，仅被 deployment.yaml 的 command 引用
 nginxArgs: daemon off;
 
-# Service 挑 Pod 的标签值，全 Chart 只被 service.yaml 引用一处；
-# Deployment 的 selector/labels 写死 nginx-demo，绝不引用它（selector 是不可变字段）。
+# 仅被 service.yaml 引用；Deployment 的 selector 写死 nginx-demo，不引用此值
 serviceSelector: nginx-demo
 
-# 写进 demo-config 的文本；改它只更新 ConfigMap 的 data，不重建对象。
+# 写入 demo-config 的文本
 message: 没看到我你的chart八成要出问题

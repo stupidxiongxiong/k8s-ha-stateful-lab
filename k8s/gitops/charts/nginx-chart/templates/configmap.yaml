@@ -1,9 +1,8 @@
-# K8s 原生对象。不写 namespace：交给 Application 的 destination（gitops-lab）。
-# name 沿用 demo-config：同名同 Kind → ArgoCD 只 update 不重建。
+# 不写 namespace，由 Application 的 destination 决定。
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: demo-config
 data:
-  # quote 负责加引号，外层不能再包一层（否则渲染出 ""...""）。
+  # quote 已产出引号，外层不得再包一层，否则渲染为 ""...""。
   message: {{ .Values.message | quote }}
